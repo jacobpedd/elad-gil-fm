@@ -32,6 +32,7 @@ async function fetchYouTubeMetadata(videoId) {
     const video = response.data.items[0];
     if (video) {
       return {
+        id: videoId,
         title: video.snippet.title,
         description: video.snippet.description,
         channel: video.snippet.channelTitle,
