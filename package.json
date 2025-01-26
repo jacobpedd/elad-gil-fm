@@ -18,9 +18,14 @@
     "@remix-run/cloudflare": "^2.15.2",
     "@remix-run/cloudflare-pages": "^2.15.2",
     "@remix-run/react": "^2.15.2",
+    "apify-client": "^2.11.1",
+    "dotenv": "^16.4.7",
+    "googleapis": "^144.0.0",
     "isbot": "^4.1.0",
+    "openai": "^4.80.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250124.3",
