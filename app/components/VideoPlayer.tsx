@@ -1,5 +1,11 @@
-import { useRef, useImperativeHandle, forwardRef } from "react";
-import ReactPlayer, { ReactPlayerProps } from "react-player";
+import {
+  useRef,
+  useImperativeHandle,
+  forwardRef,
+  useEffect,
+  useState,
+} from "react";
+import type { ReactPlayerProps } from "react-player";
 
 type VideoPlayerProps = {
   videoId: string;
@@ -15,13 +21,24 @@ export type VideoPlayerRef = {
 
 export const VideoPlayer = forwardRef<VideoPlayerRef, VideoPlayerProps>(
   ({ videoId, isPlaying, onEnded, onProgress, onDuration }, ref) => {
-    const playerRef = useRef<ReactPlayer | null>(null);
+    const playerRef = useRef<any>(null);
+    const [ReactPlayer, setReactPlayer] = useState<any>(null);
+
+    useEffect(() => {
+      import("react-player/lazy").then((module) => {
+        setReactPlayer(() => module.default);
+      });
+    }, []);
 
     useImperativeHandle(ref, () => ({
       seekTo: (amount: number) => {
         playerRef.current?.seekTo(amount, "fraction");
       },
     }));
+
+    if (!ReactPlayer) {
+      return null;
+    }
 
     return (
       <ReactPlayer
