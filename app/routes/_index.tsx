@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import type { ReactPlayerProps } from "react-player";
 import { useLoaderData } from "@remix-run/react";
 
-import { VideoPlayer } from "~/components/VideoPlayer";
+import { VideoPlayer, type VideoPlayerRef } from "~/components/VideoPlayer";
 import { TweetEmbed } from "~/components/TweetEmbed";
 import { PlayerControls } from "~/components/PlayerControls";
 import tweetsData from "~/tweets.json";
@@ -34,6 +34,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 
 export default function Index() {
   const { tweets } = useLoaderData<LoaderData>();
+  const playerRef = useRef<VideoPlayerRef>(null);
   const [currentIndex, setCurrentIndex] = useState(() =>
     Math.floor(Math.random() * tweets.length)
   );
@@ -81,13 +82,17 @@ export default function Index() {
   };
 
   const handleSeekChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPlayed(parseFloat(e.target.value));
+    const value = parseFloat(e.target.value);
+    setPlayed(value);
+    playerRef.current?.seekTo(value);
   };
 
   const handleSeekMouseUp = (e: React.MouseEvent<HTMLInputElement>) => {
     setSeeking(false);
     const target = e.target as HTMLInputElement;
-    setPlayed(parseFloat(target.value));
+    const value = parseFloat(target.value);
+    setPlayed(value);
+    playerRef.current?.seekTo(value);
   };
 
   const currentTweet = tweets[currentIndex];
@@ -100,6 +105,7 @@ export default function Index() {
       {isClient && tweets.length > 0 && (
         <>
           <VideoPlayer
+            ref={playerRef}
             videoId={currentTweet.youtubeMetadata.id}
             isPlaying={isPlaying}
             onEnded={handleEnded}
@@ -126,10 +132,6 @@ export default function Index() {
 
 declare global {
   interface Window {
-    twttr: {
-      widgets: {
-        load: () => void;
-      };
-    };
+    twttr: any;
   }
 }
