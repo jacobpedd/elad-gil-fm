@@ -1,4 +1,11 @@
-import { SkipBack, SkipForward, Play, Pause } from "lucide-react";
+import {
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+  Shuffle,
+  Share,
+} from "lucide-react";
 
 type PlayerControlsProps = {
   isPlaying: boolean;
@@ -7,6 +14,8 @@ type PlayerControlsProps = {
   onPlayPause: () => void;
   onPrevious: () => void;
   onNext: () => void;
+  onShuffle: () => void;
+  onShare: () => void;
   onSeekMouseDown: () => void;
   onSeekChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSeekMouseUp: (e: React.MouseEvent<HTMLInputElement>) => void;
@@ -19,6 +28,8 @@ export function PlayerControls({
   onPlayPause,
   onPrevious,
   onNext,
+  onShuffle,
+  onShare,
   onSeekMouseDown,
   onSeekChange,
   onSeekMouseUp,
@@ -32,6 +43,16 @@ export function PlayerControls({
     return hours > 0
       ? `${hours}:${pad(minutes)}:${pad(secs)}`
       : `${minutes}:${pad(secs)}`;
+  };
+
+  const buttonStyle = {
+    padding: "10px",
+    cursor: "pointer",
+    background: "none",
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   };
 
   return (
@@ -90,50 +111,24 @@ export function PlayerControls({
           gap: "20px",
         }}
       >
-        <button
-          onClick={onPrevious}
-          style={{
-            padding: "10px",
-            cursor: "pointer",
-            background: "none",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          aria-label="Previous"
-        >
+        <button onClick={onShuffle} style={buttonStyle} aria-label="Shuffle">
+          <Shuffle size={24} />
+        </button>
+        <button onClick={onPrevious} style={buttonStyle} aria-label="Previous">
           <SkipBack size={24} />
         </button>
         <button
           onClick={onPlayPause}
-          style={{
-            padding: "10px",
-            cursor: "pointer",
-            background: "none",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={buttonStyle}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? <Pause size={24} /> : <Play size={24} />}
         </button>
-        <button
-          onClick={onNext}
-          style={{
-            padding: "10px",
-            cursor: "pointer",
-            background: "none",
-            border: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          aria-label="Next"
-        >
+        <button onClick={onNext} style={buttonStyle} aria-label="Next">
           <SkipForward size={24} />
+        </button>
+        <button onClick={onShare} style={buttonStyle} aria-label="Share">
+          <Share size={24} />
         </button>
       </div>
     </div>

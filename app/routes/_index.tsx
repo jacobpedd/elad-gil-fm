@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/cloudflare";
 import type { ReactPlayerProps } from "react-player";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 
 import { VideoPlayer, type VideoPlayerRef } from "~/components/VideoPlayer";
 import { TweetEmbed } from "~/components/TweetEmbed";
 import { PlayerControls } from "~/components/PlayerControls";
+import { Toast } from "~/components/Toast";
 import tweetsData from "~/tweets.json";
 
 type Tweet = (typeof tweetsData)[number];
@@ -35,6 +36,7 @@ export async function loader({ context, params }: LoaderFunctionArgs) {
 
 export default function Index() {
   const { tweets } = useLoaderData<LoaderData>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const playerRef = useRef<VideoPlayerRef>(null);
   const [shuffledTweets, setShuffledTweets] = useState<Tweet[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -43,6 +45,7 @@ export default function Index() {
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
   // Initialize playlist from local storage or create new one
   useEffect(() => {
@@ -53,7 +56,17 @@ export default function Index() {
       if (stored) {
         const { playlist, index } = JSON.parse(stored);
         setShuffledTweets(playlist);
-        setCurrentIndex(index);
+
+        // If there's a video ID in the URL, find its index
+        const videoId = searchParams.get("v");
+        if (videoId) {
+          const foundIndex = playlist.findIndex(
+            (tweet: Tweet) => tweet.youtubeMetadata.id === videoId
+          );
+          setCurrentIndex(foundIndex >= 0 ? foundIndex : index);
+        } else {
+          setCurrentIndex(index);
+        }
       } else {
         const newPlaylist = shuffleArray(tweets);
         setShuffledTweets(newPlaylist);
@@ -71,7 +84,18 @@ export default function Index() {
       setShuffledTweets(shuffleArray(tweets));
       setCurrentIndex(0);
     }
-  }, [tweets]);
+  }, [tweets, searchParams]);
+
+  // Update URL when current song changes
+  useEffect(() => {
+    if (shuffledTweets.length > 0 && currentIndex >= 0) {
+      const currentVideo = shuffledTweets[currentIndex];
+      setSearchParams(
+        { v: currentVideo.youtubeMetadata.id },
+        { replace: true }
+      );
+    }
+  }, [currentIndex, shuffledTweets, setSearchParams]);
 
   // Update local storage when current index changes
   useEffect(() => {
@@ -110,6 +134,14 @@ export default function Index() {
     setCurrentIndex(nextIndex);
   };
 
+  const handleShuffle = () => {
+    const newPlaylist = shuffleArray([...shuffledTweets]);
+    const randomIndex = Math.floor(Math.random() * newPlaylist.length);
+    setShuffledTweets(newPlaylist);
+    setCurrentIndex(randomIndex);
+    setPlayed(0);
+  };
+
   const handleProgress = (state: { played: number }) => {
     if (!seeking) {
       setPlayed(state.played);
@@ -136,6 +168,12 @@ export default function Index() {
     const value = parseFloat(target.value);
     setPlayed(value);
     playerRef.current?.seekTo(value);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setShowToast(true);
+    });
   };
 
   if (shuffledTweets.length === 0) {
@@ -167,10 +205,18 @@ export default function Index() {
             onPlayPause={handlePlayPause}
             onPrevious={handlePrevious}
             onNext={handleNext}
+            onShuffle={handleShuffle}
+            onShare={handleShare}
             onSeekMouseDown={handleSeekMouseDown}
             onSeekChange={handleSeekChange}
             onSeekMouseUp={handleSeekMouseUp}
           />
+          {showToast && (
+            <Toast
+              message="Link copied to clipboard!"
+              onClose={() => setShowToast(false)}
+            />
+          )}
         </>
       )}
     </div>
