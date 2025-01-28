@@ -14,6 +14,8 @@ type LoaderData = {
   tweets: Tweet[];
 };
 
+const STORAGE_KEY = "eladFmPlaylist";
+
 export const meta: MetaFunction = () => {
   return [{ title: "Elad Radio" }];
 };
@@ -28,28 +30,68 @@ function shuffleArray<T>(array: T[]): T[] {
 }
 
 export async function loader({ context, params }: LoaderFunctionArgs) {
-  const shuffledTweets = shuffleArray(tweetsData);
-  return { tweets: shuffledTweets };
+  return { tweets: tweetsData };
 }
 
 export default function Index() {
   const { tweets } = useLoaderData<LoaderData>();
   const playerRef = useRef<VideoPlayerRef>(null);
-  const [currentIndex, setCurrentIndex] = useState(() =>
-    Math.floor(Math.random() * tweets.length)
-  );
+  const [shuffledTweets, setShuffledTweets] = useState<Tweet[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
 
+  // Initialize playlist from local storage or create new one
   useEffect(() => {
     setIsClient(true);
-  }, []);
+
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const { playlist, index } = JSON.parse(stored);
+        setShuffledTweets(playlist);
+        setCurrentIndex(index);
+      } else {
+        const newPlaylist = shuffleArray(tweets);
+        setShuffledTweets(newPlaylist);
+        setCurrentIndex(0);
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            playlist: newPlaylist,
+            index: 0,
+          })
+        );
+      }
+    } catch (error) {
+      console.error("Error accessing localStorage:", error);
+      setShuffledTweets(shuffleArray(tweets));
+      setCurrentIndex(0);
+    }
+  }, [tweets]);
+
+  // Update local storage when current index changes
+  useEffect(() => {
+    if (shuffledTweets.length > 0) {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({
+            playlist: shuffledTweets,
+            index: currentIndex,
+          })
+        );
+      } catch (error) {
+        console.error("Error saving to localStorage:", error);
+      }
+    }
+  }, [currentIndex, shuffledTweets]);
 
   const handleEnded: ReactPlayerProps["onEnded"] = () => {
-    const nextIndex = (currentIndex + 1) % tweets.length;
+    const nextIndex = (currentIndex + 1) % shuffledTweets.length;
     setCurrentIndex(nextIndex);
   };
 
@@ -58,12 +100,13 @@ export default function Index() {
   };
 
   const handlePrevious = () => {
-    const prevIndex = (currentIndex - 1 + tweets.length) % tweets.length;
+    const prevIndex =
+      (currentIndex - 1 + shuffledTweets.length) % shuffledTweets.length;
     setCurrentIndex(prevIndex);
   };
 
   const handleNext = () => {
-    const nextIndex = (currentIndex + 1) % tweets.length;
+    const nextIndex = (currentIndex + 1) % shuffledTweets.length;
     setCurrentIndex(nextIndex);
   };
 
@@ -95,14 +138,18 @@ export default function Index() {
     playerRef.current?.seekTo(value);
   };
 
-  const currentTweet = tweets[currentIndex];
+  if (shuffledTweets.length === 0) {
+    return null;
+  }
+
+  const currentTweet = shuffledTweets[currentIndex];
   const tweetUrl = `https://twitter.com/elad/status/${currentTweet.url
     .split("/")
     .pop()}`;
 
   return (
     <div style={{ position: "relative" }}>
-      {isClient && tweets.length > 0 && (
+      {isClient && shuffledTweets.length > 0 && (
         <>
           <VideoPlayer
             ref={playerRef}
