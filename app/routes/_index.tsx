@@ -39,7 +39,7 @@ export default function Index() {
     Math.floor(Math.random() * tweets.length)
   );
   const [isClient, setIsClient] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [played, setPlayed] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
